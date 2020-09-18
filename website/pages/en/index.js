@@ -36,6 +36,50 @@ Button.defaultProps = {
   target: '_self',
 };
 
+const Sponsor = ({
+  fromAccount: {name, slug, website, imageUrl},
+  totalDonations,
+}) => (
+  <a
+    key={slug}
+    className="sponsor-item"
+    title={`$${totalDonations.value} by ${name || slug}`}
+    target="_blank"
+    rel="nofollow noopener"
+    href={website || `https://opencollective.com/${slug}`}
+  >
+    {
+      <img
+        className="sponsor-avatar"
+        src={imageUrl}
+        alt={name || slug ? `${name || slug}'s avatar` : 'avatar'}
+      />
+    }
+  </a>
+);
+
+const Backer = ({
+  fromAccount: {name, slug, website, imageUrl},
+  totalDonations,
+}) => (
+  <a
+    key={slug}
+    className="backer-item"
+    title={`$${totalDonations.value} by ${name || slug}`}
+    target="_blank"
+    rel="nofollow noopener"
+    href={website || `https://opencollective.com/${slug}`}
+  >
+    {
+      <img
+        className="backer-avatar"
+        src={imageUrl}
+        alt={name || slug ? `${name || slug}'s avatar` : 'avatar'}
+      />
+    }
+  </a>
+);
+
 class Contributors extends React.Component {
   render() {
     return (
@@ -50,28 +94,8 @@ class Contributors extends React.Component {
         </p>
         <div>
           {backers
-            .filter(b => b.tier === 'sponsor')
-            .map(b => (
-              <a
-                key={b.id}
-                className="sponsor-item"
-                title={`$${b.totalDonations / 100} by ${b.name || b.slug}`}
-                target="_blank"
-                href={b.website || `https://opencollective.com/${b.slug}`}
-              >
-                {
-                  <img
-                    className="sponsor-avatar"
-                    src={b.avatar + '&width=96'}
-                    alt={
-                      b.name || b.slug
-                        ? `${b.name || b.slug}'s avatar`
-                        : 'avatar'
-                    }
-                  />
-                }
-              </a>
-            ))}
+            .filter(b => b.tier && b.tier.slug === 'sponsor')
+            .map(Sponsor)}
         </div>
         <h3>
           <translate>Backers</translate>
@@ -83,28 +107,13 @@ class Contributors extends React.Component {
         </p>
         <div>
           {backers
-            .filter(b => b.tier === 'backer' && !b.slug.includes('adult'))
-            .map(b => (
-              <a
-                key={b.id}
-                className="backer-item"
-                title={`$${b.totalDonations / 100} by ${b.name || b.slug}`}
-                target="_blank"
-                href={b.website || `https://opencollective.com/${b.slug}`}
-              >
-                {
-                  <img
-                    className="backer-avatar"
-                    src={b.avatar + '&width=96'}
-                    alt={
-                      b.name || b.slug
-                        ? `${b.name || b.slug}'s avatar`
-                        : 'avatar'
-                    }
-                  />
-                }
-              </a>
-            ))}
+            .filter(
+              b =>
+                b.tier &&
+                b.tier.slug === 'backer' &&
+                !b.fromAccount.slug.includes('adult')
+            )
+            .map(Backer)}
         </div>
       </div>
     );
@@ -368,7 +377,7 @@ class Index extends React.Component {
                   content: (
                     <translate>
                       Generate code coverage by adding the flag
-                      [`--coverage`](https://jestjs.io/docs/en/cli.html#coverage).
+                      [`--coverage`](https://jestjs.io/docs/en/cli.html#--coverageboolean).
                       No additional setup needed. Jest can collect code coverage
                       information from entire projects, including untested
                       files.
@@ -391,7 +400,7 @@ class Index extends React.Component {
                 {
                   content: (
                     <translate>
-                      Jest uses a custom resolver for imports in your tests
+                      Jest uses a custom resolver for imports in your tests,
                       making it simple to mock any object outside of your test’s
                       scope. You can use mocked imports with the rich [Mock
                       Functions](https://jestjs.io/docs/en/mock-functions.html)
@@ -412,11 +421,11 @@ class Index extends React.Component {
                 {
                   content: (
                     <translate>
-                      Tests fail, when they do Jest provides rich context why,
-                      here’s some examples:
+                      Tests fail—when they do, Jest provides rich context why.
+                      Here are some examples:
                     </translate>
                   ),
-                  image: '/img/content/matchers/different-types.png',
+                  image: '/img/content/matchers/toBe.png',
                   imageAlign: 'right',
                   title: <translate>Great Exceptions</translate>,
                 },
@@ -531,9 +540,9 @@ class Index extends React.Component {
                   <MarkdownBlock>
                     <translate>
                       A lot of people! With
-                      [8.5m](https://www.npmjs.com/package/jest) downloads in
-                      the last 30 days, and used on over
-                      [500,000](https://github.com/facebook/jest/network/dependents)
+                      [20m](https://www.npmjs.com/package/jest) downloads in the
+                      last month, and used on over
+                      [1,293,000](https://github.com/facebook/jest/network/dependents)
                       public repos on GitHub. Jest is used extensively at these
                       companies:
                     </translate>

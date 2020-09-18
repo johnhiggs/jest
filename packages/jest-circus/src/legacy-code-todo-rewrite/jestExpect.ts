@@ -5,21 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import expect from 'expect';
+import type {Config} from '@jest/types';
+import expect = require('expect');
 
 import {
   addSerializer,
-  toMatchSnapshot,
   toMatchInlineSnapshot,
-  toThrowErrorMatchingSnapshot,
+  toMatchSnapshot,
   toThrowErrorMatchingInlineSnapshot,
+  toThrowErrorMatchingSnapshot,
 } from 'jest-snapshot';
 
-export default (config: {expand: boolean}) => {
-  global.expect = expect;
-  expect.setState({
-    expand: config.expand,
-  });
+export default (config: Pick<Config.GlobalConfig, 'expand'>): typeof expect => {
+  expect.setState({expand: config.expand});
   expect.extend({
     toMatchInlineSnapshot,
     toMatchSnapshot,
@@ -28,4 +26,6 @@ export default (config: {expand: boolean}) => {
   });
 
   expect.addSnapshotSerializer = addSerializer;
+
+  return expect;
 };

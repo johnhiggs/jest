@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import prettyFormat from 'pretty-format';
-import {FailedAssertion} from '@jest/test-result';
+import prettyFormat = require('pretty-format');
+import type {FailedAssertion} from '@jest/test-result';
 
 function messageFormatter({error, message, passed}: Options) {
   if (passed) {
@@ -25,6 +25,9 @@ function messageFormatter({error, message, passed}: Options) {
     typeof error.message === 'string' &&
     typeof error.name === 'string'
   ) {
+    if (error.message === '') {
+      return error.name;
+    }
     return `${error.name}: ${error.message}`;
   }
   return `thrown: ${prettyFormat(error, {maxDepth: 3})}`;

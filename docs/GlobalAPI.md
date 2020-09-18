@@ -3,7 +3,7 @@ id: api
 title: Globals
 ---
 
-In your test files, Jest puts each of these methods and objects into the global environment. You don't have to require or import anything to use them.
+In your test files, Jest puts each of these methods and objects into the global environment. You don't have to require or import anything to use them. However, if you prefer explicit imports, you can do `import {describe, expect, test} from '@jest/globals'`.
 
 ## Methods
 
@@ -123,7 +123,7 @@ test('can find things', () => {
 });
 ```
 
-Here the `beforeAll` ensures that the database is set up before tests run. If setup was synchronous, you could just do this without `beforeAll`. The key is that Jest will wait for a promise to resolve, so you can have asynchronous setup as well.
+Here the `beforeAll` ensures that the database is set up before tests run. If setup was synchronous, you could do this without `beforeAll`. The key is that Jest will wait for a promise to resolve, so you can have asynchronous setup as well.
 
 If `beforeAll` is inside a `describe` block, it runs at the beginning of the describe block.
 
@@ -190,7 +190,7 @@ describe('my beverage', () => {
 });
 ```
 
-This isn't required - you can just write the `test` blocks directly at the top level. But this can be handy if you prefer your tests to be organized into groups.
+This isn't required - you can write the `test` blocks directly at the top level. But this can be handy if you prefer your tests to be organized into groups.
 
 You can also nest `describe` blocks if you have a hierarchy of tests:
 
@@ -249,22 +249,23 @@ Use `describe.each` if you keep duplicating the same test suites with different 
 Example:
 
 ```js
-describe.each([[1, 1, 2], [1, 2, 3], [2, 1, 3]])(
-  '.add(%i, %i)',
-  (a, b, expected) => {
-    test(`returns ${expected}`, () => {
-      expect(a + b).toBe(expected);
-    });
+describe.each([
+  [1, 1, 2],
+  [1, 2, 3],
+  [2, 1, 3],
+])('.add(%i, %i)', (a, b, expected) => {
+  test(`returns ${expected}`, () => {
+    expect(a + b).toBe(expected);
+  });
 
-    test(`returned value not be greater than ${expected}`, () => {
-      expect(a + b).not.toBeGreaterThan(expected);
-    });
+  test(`returned value not be greater than ${expected}`, () => {
+    expect(a + b).not.toBeGreaterThan(expected);
+  });
 
-    test(`returned value not be less than ${expected}`, () => {
-      expect(a + b).not.toBeLessThan(expected);
-    });
-  },
-);
+  test(`returned value not be less than ${expected}`, () => {
+    expect(a + b).not.toBeLessThan(expected);
+  });
+});
 ```
 
 #### 2. `` describe.each`table`(name, fn, timeout) ``
@@ -333,14 +334,15 @@ Use `describe.only.each` if you want to only run specific tests suites of data d
 #### `describe.only.each(table)(name, fn)`
 
 ```js
-describe.only.each([[1, 1, 2], [1, 2, 3], [2, 1, 3]])(
-  '.add(%i, %i)',
-  (a, b, expected) => {
-    test(`returns ${expected}`, () => {
-      expect(a + b).toBe(expected);
-    });
-  },
-);
+describe.only.each([
+  [1, 1, 2],
+  [1, 2, 3],
+  [2, 1, 3],
+])('.add(%i, %i)', (a, b, expected) => {
+  test(`returns ${expected}`, () => {
+    expect(a + b).toBe(expected);
+  });
+});
 
 test('will not be ran', () => {
   expect(1 / 0).toBe(Infinity);
@@ -388,7 +390,7 @@ describe.skip('my other beverage', () => {
 });
 ```
 
-Using `describe.skip` is often just an easier alternative to temporarily commenting out a chunk of tests.
+Using `describe.skip` is often a cleaner alternative to temporarily commenting out a chunk of tests.
 
 ### `describe.skip.each(table)(name, fn)`
 
@@ -401,14 +403,15 @@ Use `describe.skip.each` if you want to stop running a suite of data driven test
 #### `describe.skip.each(table)(name, fn)`
 
 ```js
-describe.skip.each([[1, 1, 2], [1, 2, 3], [2, 1, 3]])(
-  '.add(%i, %i)',
-  (a, b, expected) => {
-    test(`returns ${expected}`, () => {
-      expect(a + b).toBe(expected); // will not be ran
-    });
-  },
-);
+describe.skip.each([
+  [1, 1, 2],
+  [1, 2, 3],
+  [2, 1, 3],
+])('.add(%i, %i)', (a, b, expected) => {
+  test(`returns ${expected}`, () => {
+    expect(a + b).toBe(expected); // will not be ran
+  });
+});
 
 test('will be ran', () => {
   expect(1 / 0).toBe(Infinity);
@@ -462,6 +465,171 @@ test('has lemon in it', () => {
 
 Even though the call to `test` will return right away, the test doesn't complete until the promise resolves as well.
 
+### `test.concurrent(name, fn, timeout)`
+
+Also under the alias: `it.concurrent(name, fn, timeout)`
+
+Use `test.concurrent` if you want the test to run concurrently.
+
+> Note: `test.concurrent` is considered experimental - see [here])https://github.com/facebook/jest/labels/Area%3A%20Concurrent) for details on missing features and other issues
+
+The first argument is the test name; the second argument is an asynchronous function that contains the expectations to test. The third argument (optional) is `timeout` (in milliseconds) for specifying how long to wait before aborting. _Note: The default timeout is 5 seconds._
+
+```
+test.concurrent('addition of 2 numbers', async () => {
+  expect(5 + 3).toBe(8);
+});
+
+test.concurrent('subtraction 2 numbers', async () => {
+  expect(5 - 3).toBe(2);
+});
+```
+
+> Note: Use `maxConcurrency` in configuration to prevents Jest from executing more than the specified amount of tests at the same time
+
+### `test.concurrent.each(table)(name, fn, timeout)`
+
+Also under the alias: `it.concurrent.each(table)(name, fn, timeout)`
+
+Use `test.concurrent.each` if you keep duplicating the same test with different data. `test.each` allows you to write the test once and pass data in, the tests are all run asynchronously.
+
+`test.concurrent.each` is available with two APIs:
+
+#### 1. `test.concurrent.each(table)(name, fn, timeout)`
+
+- `table`: `Array` of Arrays with the arguments that are passed into the test `fn` for each row.
+  - _Note_ If you pass in a 1D array of primitives, internally it will be mapped to a table i.e. `[1, 2, 3] -> [[1], [2], [3]]`
+- `name`: `String` the title of the test block.
+  - Generate unique test titles by positionally injecting parameters with [`printf` formatting](https://nodejs.org/api/util.html#util_util_format_format_args):
+    - `%p` - [pretty-format](https://www.npmjs.com/package/pretty-format).
+    - `%s`- String.
+    - `%d`- Number.
+    - `%i` - Integer.
+    - `%f` - Floating point value.
+    - `%j` - JSON.
+    - `%o` - Object.
+    - `%#` - Index of the test case.
+    - `%%` - single percent sign ('%'). This does not consume an argument.
+- `fn`: `Function` the test to be ran, this is the function that will receive the parameters in each row as function arguments, **this will have to be an asynchronous function**.
+- Optionally, you can provide a `timeout` (in milliseconds) for specifying how long to wait for each row before aborting. _Note: The default timeout is 5 seconds._
+
+Example:
+
+```js
+test.concurrent.each([
+  [1, 1, 2],
+  [1, 2, 3],
+  [2, 1, 3],
+])('.add(%i, %i)', (a, b, expected) => {
+  expect(a + b).toBe(expected);
+});
+```
+
+#### 2. `` test.concurrent.each`table`(name, fn, timeout) ``
+
+- `table`: `Tagged Template Literal`
+  - First row of variable name column headings separated with `|`
+  - One or more subsequent rows of data supplied as template literal expressions using `${value}` syntax.
+- `name`: `String` the title of the test, use `$variable` to inject test data into the test title from the tagged template expressions.
+  - To inject nested object values use you can supply a keyPath i.e. `$variable.path.to.value`
+- `fn`: `Function` the test to be ran, this is the function that will receive the test data object, **this will have to be an asynchronous function**.
+- Optionally, you can provide a `timeout` (in milliseconds) for specifying how long to wait for each row before aborting. _Note: The default timeout is 5 seconds._
+
+Example:
+
+```js
+test.concurrent.each`
+  a    | b    | expected
+  ${1} | ${1} | ${2}
+  ${1} | ${2} | ${3}
+  ${2} | ${1} | ${3}
+`('returns $expected when $a is added $b', ({a, b, expected}) => {
+  expect(a + b).toBe(expected);
+});
+```
+
+### `test.concurrent.only.each(table)(name, fn)`
+
+Also under the alias: `it.concurrent.only.each(table)(name, fn)`
+
+Use `test.concurrent.only.each` if you want to only run specific tests with different test data concurrently.
+
+`test.concurrent.only.each` is available with two APIs:
+
+#### `test.concurrent.only.each(table)(name, fn)`
+
+```js
+test.concurrent.only.each([
+  [1, 1, 2],
+  [1, 2, 3],
+  [2, 1, 3],
+])('.add(%i, %i)', async (a, b, expected) => {
+  expect(a + b).toBe(expected);
+});
+
+test('will not be ran', () => {
+  expect(1 / 0).toBe(Infinity);
+});
+```
+
+#### `` test.only.each`table`(name, fn) ``
+
+```js
+test.concurrent.only.each`
+  a    | b    | expected
+  ${1} | ${1} | ${2}
+  ${1} | ${2} | ${3}
+  ${2} | ${1} | ${3}
+`('returns $expected when $a is added $b', async ({a, b, expected}) => {
+  expect(a + b).toBe(expected);
+});
+
+test('will not be ran', () => {
+  expect(1 / 0).toBe(Infinity);
+});
+```
+
+### `test.concurrent.skip.each(table)(name, fn)`
+
+Also under the alias: `it.concurrent.skip.each(table)(name, fn)`
+
+Use `test.concurrent.skip.each` if you want to stop running a collection of asynchronous data driven tests.
+
+`test.concurrent.skip.each` is available with two APIs:
+
+#### `test.concurrent.skip.each(table)(name, fn)`
+
+```js
+test.concurrent.skip.each([
+  [1, 1, 2],
+  [1, 2, 3],
+  [2, 1, 3],
+])('.add(%i, %i)', async (a, b, expected) => {
+  expect(a + b).toBe(expected); // will not be ran
+});
+
+test('will be ran', () => {
+  expect(1 / 0).toBe(Infinity);
+});
+```
+
+#### `` test.concurrent.skip.each`table`(name, fn) ``
+
+```js
+test.concurrent.skip.each`
+  a    | b    | expected
+  ${1} | ${1} | ${2}
+  ${1} | ${2} | ${3}
+  ${2} | ${1} | ${3}
+`('returns $expected when $a is added $b', async ({a, b, expected}) => {
+  expect(a + b).toBe(expected); // will not be ran
+});
+
+test('will be ran', () => {
+  expect(1 / 0).toBe(Infinity);
+});
+```
+
 ### `test.each(table)(name, fn, timeout)`
 
 Also under the alias: `it.each(table)(name, fn)` and `` it.each`table`(name, fn) ``
@@ -491,12 +659,13 @@ Use `test.each` if you keep duplicating the same test with different data. `test
 Example:
 
 ```js
-test.each([[1, 1, 2], [1, 2, 3], [2, 1, 3]])(
-  '.add(%i, %i)',
-  (a, b, expected) => {
-    expect(a + b).toBe(expected);
-  },
-);
+test.each([
+  [1, 1, 2],
+  [1, 2, 3],
+  [2, 1, 3],
+])('.add(%i, %i)', (a, b, expected) => {
+  expect(a + b).toBe(expected);
+});
 ```
 
 #### 2. `` test.each`table`(name, fn, timeout) ``
@@ -524,7 +693,7 @@ test.each`
 
 ### `test.only(name, fn, timeout)`
 
-Also under the aliases: `it.only(name, fn, timeout)` or `fit(name, fn, timeout)`
+Also under the aliases: `it.only(name, fn, timeout)`, and `fit(name, fn, timeout)`
 
 When you are debugging a large test file, you will often only want to run a subset of tests. You can use `.only` to specify which tests are the only ones you want to run in that test file.
 
@@ -544,7 +713,7 @@ test('it is not snowing', () => {
 
 Only the "it is raining" test will run in that test file, since it is run with `test.only`.
 
-Usually you wouldn't check code using `test.only` into source control - you would use it just for debugging, and remove it once you have fixed the broken tests.
+Usually you wouldn't check code using `test.only` into source control - you would use it for debugging, and remove it once you have fixed the broken tests.
 
 ### `test.only.each(table)(name, fn)`
 
@@ -557,12 +726,13 @@ Use `test.only.each` if you want to only run specific tests with different test 
 #### `test.only.each(table)(name, fn)`
 
 ```js
-test.only.each([[1, 1, 2], [1, 2, 3], [2, 1, 3]])(
-  '.add(%i, %i)',
-  (a, b, expected) => {
-    expect(a + b).toBe(expected);
-  },
-);
+test.only.each([
+  [1, 1, 2],
+  [1, 2, 3],
+  [2, 1, 3],
+])('.add(%i, %i)', (a, b, expected) => {
+  expect(a + b).toBe(expected);
+});
 
 test('will not be ran', () => {
   expect(1 / 0).toBe(Infinity);
@@ -588,9 +758,9 @@ test('will not be ran', () => {
 
 ### `test.skip(name, fn)`
 
-Also under the aliases: `it.skip(name, fn)` or `xit(name, fn)` or `xtest(name, fn)`
+Also under the aliases: `it.skip(name, fn)`, `xit(name, fn)`, and `xtest(name, fn)`
 
-When you are maintaining a large codebase, you may sometimes find a test that is temporarily broken for some reason. If you want to skip running this test, but you don't want to just delete this code, you can use `test.skip` to specify some tests to skip.
+When you are maintaining a large codebase, you may sometimes find a test that is temporarily broken for some reason. If you want to skip running this test, but you don't want to delete this code, you can use `test.skip` to specify some tests to skip.
 
 For example, let's say you had these tests:
 
@@ -606,7 +776,7 @@ test.skip('it is not snowing', () => {
 
 Only the "it is raining" test will run, since the other test is run with `test.skip`.
 
-You could simply comment the test out, but it's often a bit nicer to use `test.skip` because it will maintain indentation and syntax highlighting.
+You could comment the test out, but it's often a bit nicer to use `test.skip` because it will maintain indentation and syntax highlighting.
 
 ### `test.skip.each(table)(name, fn)`
 
@@ -619,12 +789,13 @@ Use `test.skip.each` if you want to stop running a collection of data driven tes
 #### `test.skip.each(table)(name, fn)`
 
 ```js
-test.skip.each([[1, 1, 2], [1, 2, 3], [2, 1, 3]])(
-  '.add(%i, %i)',
-  (a, b, expected) => {
-    expect(a + b).toBe(expected); // will not be ran
-  },
-);
+test.skip.each([
+  [1, 1, 2],
+  [1, 2, 3],
+  [2, 1, 3],
+])('.add(%i, %i)', (a, b, expected) => {
+  expect(a + b).toBe(expected); // will not be ran
+});
 
 test('will be ran', () => {
   expect(1 / 0).toBe(Infinity);
@@ -649,6 +820,8 @@ test('will be ran', () => {
 ```
 
 ### `test.todo(name)`
+
+Also under the alias: `it.todo(name)`
 
 Use `test.todo` when you are planning on writing tests. These tests will be highlighted in the summary output at the end so you know how many tests you still need todo.
 

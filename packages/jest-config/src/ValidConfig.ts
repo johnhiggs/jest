@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import {Config} from '@jest/types';
+import type {Config} from '@jest/types';
 import {replacePathSepForRegex} from 'jest-regex-util';
 import {multipleValidOptions} from 'jest-validate';
 import {NODE_MODULES} from './constants';
@@ -14,9 +14,7 @@ const NODE_MODULES_REGEXP = replacePathSepForRegex(NODE_MODULES);
 
 const initialOptions: Config.InitialOptions = {
   automock: false,
-  // @ts-ignore TODO: type this properly
   bail: multipleValidOptions(false, 0),
-  browser: false,
   cache: true,
   cacheDirectory: '/tmp/user/jest',
   changedFilesWithAncestor: false,
@@ -29,6 +27,7 @@ const initialOptions: Config.InitialOptions = {
   },
   coverageDirectory: 'coverage',
   coveragePathIgnorePatterns: [NODE_MODULES_REGEXP],
+  coverageProvider: 'v8',
   coverageReporters: ['json', 'text', 'lcov', 'clover'],
   coverageThreshold: {
     global: {
@@ -39,11 +38,10 @@ const initialOptions: Config.InitialOptions = {
     },
   },
   dependencyExtractor: '<rootDir>/dependencyExtractor.js',
-  // @ts-ignore TODO: type this properly
   displayName: multipleValidOptions('test-config', {
     color: 'blue',
     name: 'test-config',
-  }),
+  } as const),
   errorOnDeprecated: false,
   expand: false,
   extraGlobals: [],
@@ -58,13 +56,14 @@ const initialOptions: Config.InitialOptions = {
     defaultPlatform: 'ios',
     hasteImplModulePath: '<rootDir>/haste_impl.js',
     platforms: ['ios', 'android'],
-    providesModuleNodeModules: ['react', 'react-native'],
     throwOnModuleCollision: false,
   },
+  injectGlobals: true,
   json: false,
   lastCommit: false,
   logHeapUsage: true,
   maxConcurrency: 5,
+  maxWorkers: '50%',
   moduleDirectories: ['node_modules'],
   moduleFileExtensions: ['js', 'json', 'jsx', 'ts', 'tsx', 'node'],
   moduleLoader: '<rootDir>',
@@ -99,6 +98,7 @@ const initialOptions: Config.InitialOptions = {
   silent: true,
   skipFilter: false,
   skipNodeResolution: false,
+  slowTestThreshold: 5,
   snapshotResolver: '<rootDir>/snapshotResolver.js',
   snapshotSerializers: ['my-serializer-module'],
   testEnvironment: 'jest-environment-jsdom',
@@ -115,6 +115,7 @@ const initialOptions: Config.InitialOptions = {
   testResultsProcessor: 'processor-node-module',
   testRunner: 'jasmine2',
   testSequencer: '@jest/test-sequencer',
+  testTimeout: 5000,
   testURL: 'http://localhost',
   timers: 'real',
   transform: {

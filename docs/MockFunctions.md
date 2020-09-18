@@ -3,7 +3,7 @@ id: mock-functions
 title: Mock Functions
 ---
 
-Mock functions make it easy to test the links between code by erasing the actual implementation of a function, capturing calls to the function (and the parameters passed in those calls), capturing instances of constructor functions when instantiated with `new`, and allowing test-time configuration of return values.
+Mock functions allow you to test the links between code by erasing the actual implementation of a function, capturing calls to the function (and the parameters passed in those calls), capturing instances of constructor functions when instantiated with `new`, and allowing test-time configuration of return values.
 
 There are two ways to mock functions: Either by creating a mock function to use in test code, or writing a [`manual mock`](ManualMocks.md) to override a module dependency.
 
@@ -86,10 +86,7 @@ const myMock = jest.fn();
 console.log(myMock());
 // > undefined
 
-myMock
-  .mockReturnValueOnce(10)
-  .mockReturnValueOnce('x')
-  .mockReturnValue(true);
+myMock.mockReturnValueOnce(10).mockReturnValueOnce('x').mockReturnValue(true);
 
 console.log(myMock(), myMock(), myMock(), myMock());
 // > 10, 'x', true, true
@@ -104,7 +101,7 @@ const filterTestFn = jest.fn();
 // and `false` for the second call
 filterTestFn.mockReturnValueOnce(true).mockReturnValueOnce(false);
 
-const result = [11, 12].filter(filterTestFn);
+const result = [11, 12].filter(num => filterTestFn(num));
 
 console.log(result);
 // > [11]
@@ -133,7 +130,7 @@ export default Users;
 
 Now, in order to test this method without actually hitting the API (and thus creating slow and fragile tests), we can use the `jest.mock(...)` function to automatically mock the axios module.
 
-Once we mock the module we can provide a `mockResolvedValue` for `.get` that returns the data we want our test to assert against. In effect, we are saying that we want axios.get('/users.json') to return a fake response.
+Once we mock the module we can provide a `mockResolvedValue` for `.get` that returns the data we want our test to assert against. In effect, we are saying that we want `axios.get('/users.json')` to return a fake response.
 
 ```js
 // users.test.js
@@ -150,7 +147,7 @@ test('should fetch users', () => {
   // or you could use the following depending on your use case:
   // axios.get.mockImplementation(() => Promise.resolve(resp))
 
-  return Users.all().then(resp => expect(resp.data).toEqual(users));
+  return Users.all().then(data => expect(data).toEqual(users));
 });
 ```
 
@@ -169,7 +166,7 @@ The `mockImplementation` method is useful when you need to define the default im
 
 ```js
 // foo.js
-module.exports = function() {
+module.exports = function () {
   // some implementation;
 };
 
@@ -220,7 +217,7 @@ const myObj = {
 // is the same as
 
 const otherObj = {
-  myMethod: jest.fn(function() {
+  myMethod: jest.fn(function () {
     return this;
   }),
 };
@@ -228,7 +225,7 @@ const otherObj = {
 
 ## Mock Names
 
-You can optionally provide a name for your mock functions, which will be displayed instead of "jest.fn()" in test error output. Use this if you want to be able to quickly identify the mock function reporting an error in your test output.
+You can optionally provide a name for your mock functions, which will be displayed instead of "jest.fn()" in the test error output. Use this if you want to be able to quickly identify the mock function reporting an error in your test output.
 
 ```javascript
 const myMockFn = jest
@@ -240,30 +237,30 @@ const myMockFn = jest
 
 ## Custom Matchers
 
-Finally, in order to make it simpler to assert how mock functions have been called, we've added some custom matcher functions for you:
+Finally, in order to make it less demanding to assert how mock functions have been called, we've added some custom matcher functions for you:
 
 ```javascript
 // The mock function was called at least once
-expect(mockFunc).toBeCalled();
+expect(mockFunc).toHaveBeenCalled();
 
 // The mock function was called at least once with the specified args
-expect(mockFunc).toBeCalledWith(arg1, arg2);
+expect(mockFunc).toHaveBeenCalledWith(arg1, arg2);
 
 // The last call to the mock function was called with the specified args
-expect(mockFunc).lastCalledWith(arg1, arg2);
+expect(mockFunc).toHaveBeenLastCalledWith(arg1, arg2);
 
 // All calls and the name of the mock is written as a snapshot
 expect(mockFunc).toMatchSnapshot();
 ```
 
-These matchers are really just sugar for common forms of inspecting the `.mock` property. You can always do this manually yourself if that's more to your taste or if you need to do something more specific:
+These matchers are sugar for common forms of inspecting the `.mock` property. You can always do this manually yourself if that's more to your taste or if you need to do something more specific:
 
 ```javascript
 // The mock function was called at least once
 expect(mockFunc.mock.calls.length).toBeGreaterThan(0);
 
 // The mock function was called at least once with the specified args
-expect(mockFunc.mock.calls).toContain([arg1, arg2]);
+expect(mockFunc.mock.calls).toContainEqual([arg1, arg2]);
 
 // The last call to the mock function was called with the specified args
 expect(mockFunc.mock.calls[mockFunc.mock.calls.length - 1]).toEqual([

@@ -4,7 +4,7 @@ title: Mock Functions
 original_id: mock-function-api
 ---
 
-Mock functions are also known as "spies", because they let you spy on the behavior of a function that is called indirectly by some other code, rather than just testing the output. You can create a mock function with `jest.fn()`. If no implementation is given, the mock function will return `undefined` when invoked.
+Mock functions are also known as "spies", because they let you spy on the behavior of a function that is called indirectly by some other code, rather than only testing the output. You can create a mock function with `jest.fn()`. If no implementation is given, the mock function will return `undefined` when invoked.
 
 ## Methods
 
@@ -25,7 +25,10 @@ An array containing the call arguments of all calls that have been made to this 
 For example: A mock function `f` that has been called twice, with the arguments `f('arg1', 'arg2')`, and then with the arguments `f('arg3', 'arg4')`, would have a `mock.calls` array that looks like this:
 
 ```js
-[['arg1', 'arg2'], ['arg3', 'arg4']];
+[
+  ['arg1', 'arg2'],
+  ['arg3', 'arg4'],
+];
 ```
 
 ### `mockFn.mock.results`
@@ -71,11 +74,11 @@ mockFn.mock.instances[1] === b; // true
 
 ### `mockFn.mockClear()`
 
-Resets all information stored in the [`mockFn.mock.calls`](#mockfn-mock-calls) and [`mockFn.mock.instances`](#mockfn-mock-instances) arrays.
+Resets all information stored in the [`mockFn.mock.calls`](#mockfnmockcalls) and [`mockFn.mock.instances`](#mockfnmockinstances) arrays.
 
 Often this is useful when you want to clean up a mock's usage data between two assertions.
 
-Beware that `mockClear` will replace `mockFn.mock`, not just [`mockFn.mock.calls`](#mockfn-mock-calls) and [`mockFn.mock.instances`](#mockfn-mock-instances). You should therefore avoid assigning `mockFn.mock` to other variables, temporary or not, to make sure you don't access stale data.
+Beware that `mockClear` will replace `mockFn.mock`, not just [`mockFn.mock.calls`](#mockfnmockcalls) and [`mockFn.mock.instances`](#mockfnmockinstances). You should therefore avoid assigning `mockFn.mock` to other variables, temporary or not, to make sure you don't access stale data.
 
 The [`clearMocks`](configuration.html#clearmocks-boolean) configuration option is available to clear mocks automatically between tests.
 
@@ -85,7 +88,7 @@ Does everything that [`mockFn.mockClear()`](#mockfnmockclear) does, and also rem
 
 This is useful when you want to completely reset a _mock_ back to its initial state. (Note that resetting a _spy_ will result in a function with no return value).
 
-Beware that `mockReset` will replace `mockFn.mock`, not just [`mockFn.mock.calls`](#mockfn-mock-calls) and [`mockFn.mock.instances`](#mockfn-mock-instances). You should therefore avoid assigning `mockFn.mock` to other variables, temporary or not, to make sure you don't access stale data.
+Beware that `mockReset` will replace `mockFn.mock`, not just [`mockFn.mock.calls`](#mockfnmockcalls) and [`mockFn.mock.instances`](#mockfnmockinstances). You should therefore avoid assigning `mockFn.mock` to other variables, temporary or not, to make sure you don't access stale data.
 
 ### `mockFn.mockRestore()`
 
@@ -93,7 +96,7 @@ Does everything that [`mockFn.mockReset()`](#mockfnmockreset) does, and also res
 
 This is useful when you want to mock functions in certain test cases and restore the original implementation in others.
 
-Beware that `mockFn.mockRestore` only works when mock was created with `jest.spyOn`. Thus you have to take care of restoration yourself when manually assigning `jest.fn()`.
+Beware that `mockFn.mockRestore` only works when the mock was created with `jest.spyOn`. Thus you have to take care of restoration yourself when manually assigning `jest.fn()`.
 
 The [`restoreMocks`](configuration.html#restoremocks-boolean) configuration option is available to restore mocks automatically between tests.
 
@@ -183,18 +186,18 @@ expect(mockFn).toHaveBeenCalled();
 
 Will result in this error:
 
-```bash
-    expect(mockedFunction).toHaveBeenCalled()
+```
+expect(mockedFunction).toHaveBeenCalled()
 
-    Expected mock function to have been called.
+Expected mock function "mockedFunction" to have been called, but it was not called.
 ```
 
 ### `mockFn.mockReturnThis()`
 
-Just a simple sugar function for:
+Syntactic sugar function for:
 
 ```js
-jest.fn(function() {
+jest.fn(function () {
   return this;
 });
 ```
@@ -228,7 +231,7 @@ console.log(myMockFn(), myMockFn(), myMockFn(), myMockFn());
 
 ### `mockFn.mockResolvedValue(value)`
 
-Simple sugar function for:
+Syntactic sugar function for:
 
 ```js
 jest.fn().mockImplementation(() => Promise.resolve(value));
@@ -246,7 +249,7 @@ test('async test', async () => {
 
 ### `mockFn.mockResolvedValueOnce(value)`
 
-Simple sugar function for:
+Syntactic sugar function for:
 
 ```js
 jest.fn().mockImplementationOnce(() => Promise.resolve(value));
@@ -271,7 +274,7 @@ test('async test', async () => {
 
 ### `mockFn.mockRejectedValue(value)`
 
-Simple sugar function for:
+Syntactic sugar function for:
 
 ```js
 jest.fn().mockImplementation(() => Promise.reject(value));
@@ -289,7 +292,7 @@ test('async test', async () => {
 
 ### `mockFn.mockRejectedValueOnce(value)`
 
-Simple sugar function for:
+Syntactic sugar function for:
 
 ```js
 jest.fn().mockImplementationOnce(() => Promise.reject(value));

@@ -30,7 +30,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 /* eslint-disable sort-keys */
 
-import {Jasmine} from '../types';
+import type {Jasmine, SpecDefinitionsFn} from '../types';
 import createSpy from './createSpy';
 import Env from './Env';
 import JsApiReporter from './JsApiReporter';
@@ -40,12 +40,12 @@ import SpyRegistry from './spyRegistry';
 import Suite from './Suite';
 import Timer from './Timer';
 
-const create = function(createOptions: Record<string, any>): Jasmine {
+export const create = function (createOptions: Record<string, any>): Jasmine {
   const j$ = {...createOptions} as Jasmine;
 
-  j$._DEFAULT_TIMEOUT_INTERVAL = 5000;
+  j$._DEFAULT_TIMEOUT_INTERVAL = createOptions.testTimeout || 5000;
 
-  j$.getEnv = function(options?: object) {
+  j$.getEnv = function (options?: Record<string, unknown>) {
     const env = (j$.currentEnv_ = j$.currentEnv_ || new j$.Env(options));
     //jasmine. singletons in here (setTimeout blah blah).
     return env;
@@ -63,17 +63,18 @@ const create = function(createOptions: Record<string, any>): Jasmine {
   return j$;
 };
 
-const _interface = function(jasmine: Jasmine, env: any) {
+// Interface is a reserved word in strict mode, so can't export it as ESM
+export const _interface = function (jasmine: Jasmine, env: any) {
   const jasmineInterface = {
-    describe(description: string, specDefinitions: Function) {
+    describe(description: string, specDefinitions: SpecDefinitionsFn) {
       return env.describe(description, specDefinitions);
     },
 
-    xdescribe(description: string, specDefinitions: Function) {
+    xdescribe(description: string, specDefinitions: SpecDefinitionsFn) {
       return env.xdescribe(description, specDefinitions);
     },
 
-    fdescribe(description: string, specDefinitions: Function) {
+    fdescribe(description: string, specDefinitions: SpecDefinitionsFn) {
       return env.fdescribe(description, specDefinitions);
     },
 
@@ -146,6 +147,3 @@ const _interface = function(jasmine: Jasmine, env: any) {
 
   return jasmineInterface;
 };
-
-// Interface is a reserved word in strict mode, so can't export it as ESM
-export = {create, interface: _interface};

@@ -7,20 +7,21 @@
 
 import BaseWorkerPool from './base/BaseWorkerPool';
 
-import {
+import type {
   ChildMessage,
-  WorkerOptions,
-  OnStart,
+  OnCustomMessage,
   OnEnd,
-  WorkerPoolInterface,
+  OnStart,
   WorkerInterface,
+  WorkerOptions,
+  WorkerPoolInterface,
 } from './types';
 
 const canUseWorkerThreads = () => {
   try {
     require('worker_threads');
     return true;
-  } catch (_) {
+  } catch {
     return false;
   }
 };
@@ -31,8 +32,9 @@ class WorkerPool extends BaseWorkerPool implements WorkerPoolInterface {
     request: ChildMessage,
     onStart: OnStart,
     onEnd: OnEnd,
+    onCustomMessage: OnCustomMessage,
   ): void {
-    this.getWorkerById(workerId).send(request, onStart, onEnd);
+    this.getWorkerById(workerId).send(request, onStart, onEnd, onCustomMessage);
   }
 
   createWorker(workerOptions: WorkerOptions): WorkerInterface {

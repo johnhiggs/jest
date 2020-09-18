@@ -43,7 +43,7 @@ test('adding positive numbers is not zero', () => {
 
 ## Truthiness
 
-In tests you sometimes need to distinguish between `undefined`, `null`, and `false`, but you sometimes do not want to treat these differently. Jest contains helpers that let you be explicit about what you want.
+In tests, you sometimes need to distinguish between `undefined`, `null`, and `false`, but you sometimes do not want to treat these differently. Jest contains helpers that let you be explicit about what you want.
 
 - `toBeNull` matches only `null`
 - `toBeUndefined` matches only `undefined`
@@ -138,16 +138,16 @@ test('the shopping list has beer on it', () => {
 
 ## Exceptions
 
-If you want to test that a particular function throws an error when it's called, use `toThrow`.
+If you want to test whether a particular function throws an error when it's called, use `toThrow`.
 
 ```js
 function compileAndroidCode() {
-  throw new ConfigError('you are using the wrong JDK');
+  throw new Error('you are using the wrong JDK');
 }
 
 test('compiling android goes as expected', () => {
   expect(compileAndroidCode).toThrow();
-  expect(compileAndroidCode).toThrow(ConfigError);
+  expect(compileAndroidCode).toThrow(Error);
 
   // You can also use the exact error message or a regexp
   expect(compileAndroidCode).toThrow('you are using the wrong JDK');

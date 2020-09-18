@@ -1,6 +1,6 @@
 {
   "name": "jest-repl",
-  "version": "24.7.1",
+  "version": "26.4.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/jest.git",
@@ -10,25 +10,24 @@
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "dependencies": {
-    "@jest/transform": "^24.7.1",
-    "@jest/types": "^24.7.0",
-    "jest-config": "^24.7.1",
-    "jest-runtime": "^24.7.1",
-    "jest-validate": "^24.7.0",
+    "@jest/transform": "^26.3.0",
+    "@jest/types": "^26.3.0",
+    "jest-config": "^26.4.2",
+    "jest-runtime": "^26.4.2",
+    "jest-validate": "^26.4.2",
     "repl": "^0.1.3",
-    "yargs": "^12.0.2"
+    "yargs": "^16.0.3"
   },
   "devDependencies": {
-    "@types/yargs": "^12.0.2"
+    "@jest/test-utils": "^26.3.0",
+    "@types/yargs": "^15.0.0"
   },
-  "bin": {
-    "jest-repl": "./bin/jest-repl.js"
-  },
+  "bin": "./bin/jest-repl.js",
   "engines": {
-    "node": ">= 6"
+    "node": ">= 10.14.2"
   },
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "0efb1d7809cb96ae87a7601e7802f1dab3774280"
+  "gitHead": "170eee11d03b0ed5c60077982fdbc3bafd403638"
 }

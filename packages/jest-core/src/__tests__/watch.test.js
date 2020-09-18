@@ -6,11 +6,9 @@
  *
  */
 
-'use strict';
-
 import chalk from 'chalk';
-import TestWatcher from '../TestWatcher';
 import {JestHook, KEYS} from 'jest-watcher';
+import TestWatcher from '../TestWatcher';
 
 const runJestMock = jest.fn();
 const watchPluginPath = `${__dirname}/__fixtures__/watch_plugin`;
@@ -42,11 +40,11 @@ jest.mock(
     },
 );
 
-jest.doMock('chalk', () => new chalk.constructor({enabled: false}));
+jest.doMock('chalk', () => new chalk.Instance({level: 0}));
 jest.doMock(
   '../runJest',
   () =>
-    function() {
+    function () {
       const args = Array.from(arguments);
       const [{onComplete}] = args;
       runJestMock.apply(null, args);
@@ -93,6 +91,14 @@ jest.doMock('../lib/update_global_config', () => updateGlobalConfig);
 
 const nextTick = () => new Promise(res => process.nextTick(res));
 
+beforeAll(() => {
+  jest.spyOn(process, 'on').mockImplementation(() => {});
+});
+
+afterAll(() => {
+  jest.restoreAllMocks();
+});
+
 afterEach(runJestMock.mockReset);
 
 describe('Watch mode flows', () => {
@@ -108,7 +114,12 @@ describe('Watch mode flows', () => {
     isInteractive = true;
     jest.doMock('jest-util/build/isInteractive', () => isInteractive);
     watch = require('../watch').default;
-    const config = {roots: [], testPathIgnorePatterns: [], testRegex: []};
+    const config = {
+      rootDir: __dirname,
+      roots: [],
+      testPathIgnorePatterns: [],
+      testRegex: [],
+    };
     pipe = {write: jest.fn()};
     globalConfig = {watch: true};
     hasteMapInstances = [{on: () => {}}];
@@ -569,6 +580,24 @@ describe('Watch mode flows', () => {
         },
       ],
     });
+  });
+
+  it('makes watch plugin initialization errors look nice', async () => {
+    const pluginPath = `${__dirname}/__fixtures__/watch_plugin_throws`;
+
+    await expect(
+      watch(
+        {
+          ...globalConfig,
+          rootDir: __dirname,
+          watchPlugins: [{config: {}, path: pluginPath}],
+        },
+        contexts,
+        pipe,
+        hasteMapInstances,
+        stdin,
+      ),
+    ).rejects.toMatchSnapshot();
   });
 
   it.each`

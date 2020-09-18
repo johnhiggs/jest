@@ -9,12 +9,12 @@ import {
   CHILD_MESSAGE_CALL,
   CHILD_MESSAGE_END,
   CHILD_MESSAGE_INITIALIZE,
+  ChildMessageCall,
+  ChildMessageInitialize,
   PARENT_MESSAGE_CLIENT_ERROR,
   PARENT_MESSAGE_ERROR,
-  PARENT_MESSAGE_SETUP_ERROR,
   PARENT_MESSAGE_OK,
-  ChildMessageInitialize,
-  ChildMessageCall,
+  PARENT_MESSAGE_SETUP_ERROR,
 } from '../types';
 
 let file: string | null = null;
@@ -34,7 +34,7 @@ let initialized = false;
  * If an invalid message is detected, the child will exit (by throwing) with a
  * non-zero exit code.
  */
-process.on('message', (request: any) => {
+const messageListener: NodeJS.MessageListener = request => {
   switch (request[0]) {
     case CHILD_MESSAGE_INITIALIZE:
       const init: ChildMessageInitialize = request;
@@ -56,9 +56,10 @@ process.on('message', (request: any) => {
         'Unexpected request from parent process: ' + request[0],
       );
   }
-});
+};
+process.on('message', messageListener);
 
-function reportSuccess(result: any) {
+function reportSuccess(result: unknown) {
   if (!process || !process.send) {
     throw new Error('Child can only be used on a forked process');
   }
@@ -105,10 +106,11 @@ function end(): void {
 }
 
 function exitProcess(): void {
-  process.exit(0);
+  // Clean up open handles so the process ideally exits gracefully
+  process.removeListener('message', messageListener);
 }
 
-function execMethod(method: string, args: Array<any>): void {
+function execMethod(method: string, args: Array<unknown>): void {
   const main = require(file!);
 
   let fn: (...args: Array<unknown>) => unknown;
@@ -134,8 +136,13 @@ function execMethod(method: string, args: Array<any>): void {
   execFunction(main.setup, main, setupArgs, execHelper, reportInitializeError);
 }
 
+const isPromise = (obj: any): obj is PromiseLike<unknown> =>
+  !!obj &&
+  (typeof obj === 'object' || typeof obj === 'function') &&
+  typeof obj.then === 'function';
+
 function execFunction(
-  fn: (...args: Array<unknown>) => any | Promise<any>,
+  fn: (...args: Array<unknown>) => unknown | Promise<unknown>,
   ctx: unknown,
   args: Array<unknown>,
   onResult: (result: unknown) => void,
@@ -151,7 +158,7 @@ function execFunction(
     return;
   }
 
-  if (result && typeof result.then === 'function') {
+  if (isPromise(result)) {
     result.then(onResult, onError);
   } else {
     onResult(result);

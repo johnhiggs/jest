@@ -12,7 +12,7 @@ The native timer functions (i.e., `setTimeout`, `setInterval`, `clearTimeout`, `
 function timerGame(callback) {
   console.log('Ready....go!');
   setTimeout(() => {
-    console.log('Times up -- stop!');
+    console.log("Time's up -- stop!");
     callback && callback();
   }, 1000);
 }
@@ -72,7 +72,7 @@ function infiniteTimerGame(callback) {
   console.log('Ready....go!');
 
   setTimeout(() => {
-    console.log('Times up! 10 seconds before the next game starts...');
+    console.log("Time's up! 10 seconds before the next game starts...");
     callback && callback();
 
     // Schedule the next game in 10 seconds
@@ -122,7 +122,7 @@ describe('infiniteTimerGame', () => {
 
 ##### renamed from `runTimersToTime` to `advanceTimersByTime` in Jest **22.0.0**
 
-Another possibility is use `jest.advanceTimersByTime(msToRun)`. When this API is called, all timers are advanced by `msToRun` milliseconds. All pending "macro-tasks" that have been queued via setTimeout() or setInterval(), and would be executed during this time frame, will be executed. Additionally if those macro-tasks schedule new macro-tasks that would be executed within the same time frame, those will be executed until there are no more macro-tasks remaining in the queue that should be run within msToRun milliseconds.
+Another possibility is use `jest.advanceTimersByTime(msToRun)`. When this API is called, all timers are advanced by `msToRun` milliseconds. All pending "macro-tasks" that have been queued via setTimeout() or setInterval(), and would be executed during this time frame, will be executed. Additionally, if those macro-tasks schedule new macro-tasks that would be executed within the same time frame, those will be executed until there are no more macro-tasks remaining in the queue that should be run within msToRun milliseconds.
 
 ```javascript
 // timerGame.js
@@ -131,7 +131,7 @@ Another possibility is use `jest.advanceTimersByTime(msToRun)`. When this API is
 function timerGame(callback) {
   console.log('Ready....go!');
   setTimeout(() => {
-    console.log('Times up -- stop!');
+    console.log("Time's up -- stop!");
     callback && callback();
   }, 1000);
 }

@@ -6,10 +6,13 @@
  *
  */
 
-import getType, {isPrimitive} from 'jest-get-type';
+/* eslint-disable local/ban-types-eventually */
+
+import getType = require('jest-get-type');
 import {
   DIM_COLOR,
   EXPECTED_COLOR,
+  MatcherHintOptions,
   RECEIVED_COLOR,
   SUGGEST_TO_CONTAIN_EQUAL,
   ensureExpectedIsNonNegativeInteger,
@@ -18,15 +21,15 @@ import {
   getLabelPrinter,
   matcherErrorMessage,
   matcherHint,
-  printReceived,
+  printDiffOrStringify,
   printExpected,
+  printReceived,
   printWithType,
   stringify,
-  MatcherHintOptions,
 } from 'jest-matcher-utils';
-import {MatchersObject, MatcherState} from './types';
+import type {MatcherState, MatchersObject} from './types';
 import {
-  printDiffOrStringify,
+  printCloseTo,
   printExpectedConstructorName,
   printExpectedConstructorNameNot,
   printReceivedArrayContainExpectedItem,
@@ -51,6 +54,9 @@ const RECEIVED_LABEL = 'Received';
 const EXPECTED_VALUE_LABEL = 'Expected value';
 const RECEIVED_VALUE_LABEL = 'Received value';
 
+// The optional property of matcher context is true if undefined.
+const isExpand = (expand?: boolean): boolean => expand !== false;
+
 const toStrictEqualTesters = [
   iterableEquality,
   typeEquality,
@@ -60,7 +66,7 @@ const toStrictEqualTesters = [
 type ContainIterable =
   | Array<unknown>
   | Set<unknown>
-  | NodeListOf<any>
+  | NodeListOf<Node>
   | DOMTokenList
   | HTMLCollectionOf<any>;
 
@@ -107,7 +113,7 @@ const matchers: MatchersObject = {
               received,
               EXPECTED_LABEL,
               RECEIVED_LABEL,
-              this.expand,
+              isExpand(this.expand),
             )
           );
         };
@@ -126,12 +132,33 @@ const matchers: MatchersObject = {
   ) {
     const matcherName = 'toBeCloseTo';
     const secondArgument = arguments.length === 3 ? 'precision' : undefined;
+    const isNot = this.isNot;
     const options: MatcherHintOptions = {
-      isNot: this.isNot,
+      isNot,
       promise: this.promise,
       secondArgument,
+      secondArgumentColor: (arg: string) => arg,
     };
-    ensureNumbers(received, expected, matcherName, options);
+
+    if (typeof expected !== 'number') {
+      throw new Error(
+        matcherErrorMessage(
+          matcherHint(matcherName, undefined, undefined, options),
+          `${EXPECTED_COLOR('expected')} value must be a number`,
+          printWithType('Expected', expected, printExpected),
+        ),
+      );
+    }
+
+    if (typeof received !== 'number') {
+      throw new Error(
+        matcherErrorMessage(
+          matcherHint(matcherName, undefined, undefined, options),
+          `${RECEIVED_COLOR('received')} value must be a number`,
+          printWithType('Received', received, printReceived),
+        ),
+      );
+    }
 
     let pass = false;
     let expectedDiff = 0;
@@ -156,18 +183,14 @@ const matchers: MatchersObject = {
             ? ''
             : `Received:     ${printReceived(received)}\n` +
               '\n' +
-              `Expected precision:        ${printExpected(precision)}\n` +
-              `Expected difference: not < ${printExpected(expectedDiff)}\n` +
-              `Received difference:       ${printReceived(receivedDiff)}`)
+              printCloseTo(receivedDiff, expectedDiff, precision, isNot))
       : () =>
           matcherHint(matcherName, undefined, undefined, options) +
           '\n\n' +
           `Expected: ${printExpected(expected)}\n` +
           `Received: ${printReceived(received)}\n` +
           '\n' +
-          `Expected precision:    ${printExpected(precision)}\n` +
-          `Expected difference: < ${printExpected(expectedDiff)}\n` +
-          `Received difference:   ${printReceived(receivedDiff)}`;
+          printCloseTo(receivedDiff, expectedDiff, precision, isNot);
 
     return {message, pass};
   },
@@ -208,7 +231,11 @@ const matchers: MatchersObject = {
     return {message, pass};
   },
 
-  toBeGreaterThan(this: MatcherState, received: number, expected: number) {
+  toBeGreaterThan(
+    this: MatcherState,
+    received: number | bigint,
+    expected: number | bigint,
+  ) {
     const matcherName = 'toBeGreaterThan';
     const isNot = this.isNot;
     const options: MatcherHintOptions = {
@@ -230,8 +257,8 @@ const matchers: MatchersObject = {
 
   toBeGreaterThanOrEqual(
     this: MatcherState,
-    received: number,
-    expected: number,
+    received: number | bigint,
+    expected: number | bigint,
   ) {
     const matcherName = 'toBeGreaterThanOrEqual';
     const isNot = this.isNot;
@@ -288,7 +315,8 @@ const matchers: MatchersObject = {
           matcherHint(matcherName, undefined, undefined, options) +
           '\n\n' +
           printExpectedConstructorName('Expected constructor', expected) +
-          (isPrimitive(received) || Object.getPrototypeOf(received) === null
+          (getType.isPrimitive(received) ||
+          Object.getPrototypeOf(received) === null
             ? `\nReceived value has no prototype\nReceived value: ${printReceived(
                 received,
               )}`
@@ -302,7 +330,11 @@ const matchers: MatchersObject = {
     return {message, pass};
   },
 
-  toBeLessThan(this: MatcherState, received: number, expected: number) {
+  toBeLessThan(
+    this: MatcherState,
+    received: number | bigint,
+    expected: number | bigint,
+  ) {
     const matcherName = 'toBeLessThan';
     const isNot = this.isNot;
     const options: MatcherHintOptions = {
@@ -322,7 +354,11 @@ const matchers: MatchersObject = {
     return {message, pass};
   },
 
-  toBeLessThanOrEqual(this: MatcherState, received: number, expected: number) {
+  toBeLessThanOrEqual(
+    this: MatcherState,
+    received: number | bigint,
+    expected: number | bigint,
+  ) {
     const matcherName = 'toBeLessThanOrEqual';
     const isNot = this.isNot;
     const options: MatcherHintOptions = {
@@ -577,7 +613,7 @@ const matchers: MatchersObject = {
             received,
             EXPECTED_LABEL,
             RECEIVED_LABEL,
-            this.expand,
+            isExpand(this.expand),
           );
 
     // Passing the actual and expected objects so that a custom reporter
@@ -594,10 +630,7 @@ const matchers: MatchersObject = {
       promise: this.promise,
     };
 
-    if (
-      typeof received !== 'string' &&
-      (!received || typeof received.length !== 'number')
-    ) {
+    if (typeof received?.length !== 'number') {
       throw new Error(
         matcherErrorMessage(
           matcherHint(matcherName, undefined, undefined, options),
@@ -751,7 +784,7 @@ const matchers: MatchersObject = {
                 receivedValue,
                 EXPECTED_VALUE_LABEL,
                 RECEIVED_VALUE_LABEL,
-                this.expand,
+                isExpand(this.expand),
               )
             : `Received path: ${printReceived(
                 expectedPathType === 'array' || receivedPath.length === 0
@@ -801,7 +834,7 @@ const matchers: MatchersObject = {
     const pass =
       typeof expected === 'string'
         ? received.includes(expected)
-        : expected.test(received);
+        : new RegExp(expected).test(received);
 
     const message = pass
       ? () =>
@@ -886,7 +919,7 @@ const matchers: MatchersObject = {
             getObjectSubset(received, expected),
             EXPECTED_LABEL,
             RECEIVED_LABEL,
-            this.expand,
+            isExpand(this.expand),
           );
 
     return {message, pass};
@@ -918,7 +951,7 @@ const matchers: MatchersObject = {
             received,
             EXPECTED_LABEL,
             RECEIVED_LABEL,
-            this.expand,
+            isExpand(this.expand),
           );
 
     // Passing the actual and expected objects so that a custom reporter

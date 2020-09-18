@@ -18,6 +18,27 @@
 
 <p align="right"><em>See more on <a href="https://jestjs.io">jestjs.io</a></em></p>
 
+## Table of Contents
+
+- [Getting Started](#getting-started)
+- [Running from command line](#running-from-command-line)
+- [Additional Configuration](#additional-configuration)
+  - [Generate a basic configuration file](#generate-a-basic-configuration-file)
+  - [Using Babel](#using-babel)
+  - [Using Webpack](#using-webpack)
+  - [Using Parcel](#using-parcel)
+  - [Using Typescript](#using-typescript)
+- [Documentation](#documentation)
+- [Badge](#badge)
+- [Contributing](#contributing)
+  - [Code of Conduct](#code-of-conduct)
+  - [Contributing Guide](#contributing-guide)
+  - [Good First Issues](#good-first-issues)
+- [Credits](#credits)
+  - [Backers](#backers)
+  - [Sponsors](#sponsors)
+- [License](#license)
+
 ## Getting Started
 
 <!-- copied from Getting Started docs, links updated to point to Jest website -->
@@ -148,11 +169,15 @@ module.exports = {
 
 ### Using webpack
 
-Jest can be used in projects that use [webpack](https://webpack.github.io/) to manage assets, styles, and compilation. webpack does offer some unique challenges over other tools. Refer to the [webpack guide](https://jestjs.io/docs/en/webpack) to get started.
+Jest can be used in projects that use [webpack](https://webpack.js.org/) to manage assets, styles, and compilation. webpack does offer some unique challenges over other tools. Refer to the [webpack guide](https://jestjs.io/docs/en/webpack) to get started.
+
+### Using parcel
+
+Jest can be used in projects that use [parcel-bundler](https://parceljs.org/) to manage assets, styles, and compilation similar to webpack. Parcel requires zero configuration.
 
 ### Using TypeScript
 
-Jest supports TypeScript, via Babel. First make sure you followed the instructions on [using Babel](#using-babel) above. Next install the `@babel/preset-typescript` via `yarn`:
+Jest supports TypeScript, via Babel. First, make sure you followed the instructions on [using Babel](#using-babel) above. Next, install the `@babel/preset-typescript` via `yarn`:
 
 ```bash
 yarn add --dev @babel/preset-typescript
@@ -170,7 +195,7 @@ module.exports = {
 };
 ```
 
-Note, there are some [caveats](https://babeljs.io/docs/en/next/babel-plugin-transform-typescript.html#caveats) to using TypeScript with Babel. Because TypeScript support in Babel is just transpilation, Jest will not type-check your tests as they are ran. If you want that, you can use [ts-jest](https://github.com/kulshekhar/ts-jest).
+Note, there are some [caveats](https://babeljs.io/docs/en/next/babel-plugin-transform-typescript.html#caveats) to using TypeScript with Babel. Because TypeScript support in Babel is transpilation, Jest will not type-check your tests as they are run. If you want that, you can use [ts-jest](https://github.com/kulshekhar/ts-jest).
 
 <!-- end copied -->
 
@@ -187,8 +212,10 @@ Learn more about using [Jest on the official site!](https://jestjs.io)
 
 Show the world you're using _Jest_ `→` [![tested with jest](https://img.shields.io/badge/tested_with-jest-99424f.svg)](https://github.com/facebook/jest) [![jest](https://jestjs.io/img/jest-badge.svg)](https://github.com/facebook/jest)
 
+<!-- prettier-ignore -->
 ```md
-[![tested with jest](https://img.shields.io/badge/tested_with-jest-99424f.svg)](https://github.com/facebook/jest) [![jest](https://jestjs.io/img/jest-badge.svg)](https://github.com/facebook/jest)
+[![tested with jest](https://img.shields.io/badge/tested_with-jest-99424f.svg)](https://github.com/facebook/jest)
+[![jest](https://jestjs.io/img/jest-badge.svg)](https://github.com/facebook/jest)
 ```
 
 ## Contributing
@@ -203,13 +230,15 @@ Facebook has adopted a Code of Conduct that we expect project participants to ad
 
 Read our [contributing guide](CONTRIBUTING.md) to learn about our development process, how to propose bugfixes and improvements, and how to build and test your changes to Jest.
 
-### [Good First Issues](https://github.com/facebook/jest/labels/%3Awave%3A%20Good%20First%20Issue)
+### [Good First Issues](https://github.com/facebook/jest/labels/good%20first%20issue)
 
-To help you get your feet wet and get you familiar with our contribution process, we have a list of [good first issues](https://github.com/facebook/jest/labels/%3Awave%3A%20Good%20First%20Issue) that contain bugs which have a relatively limited scope. This is a great place to get started.
+To help you get your feet wet and get you familiar with our contribution process, we have a list of [good first issues](https://github.com/facebook/jest/labels/good%20first%20issue) that contain bugs which have a relatively limited scope. This is a great place to get started.
 
 ## Credits
 
-This project exists thanks to all the people who [contribute](CONTRIBUTING.md). <a href="https://github.com/facebook/jest/graphs/contributors"><img src="https://opencollective.com/jest/contributors.svg?width=890&button=false" /></a>
+This project exists thanks to all the people who [contribute](CONTRIBUTING.md).
+
+<a href="https://github.com/facebook/jest/graphs/contributors"><img src="https://opencollective.com/jest/contributors.svg?width=890&button=false" /></a>
 
 ### [Backers](https://opencollective.com/jest#backer)
 

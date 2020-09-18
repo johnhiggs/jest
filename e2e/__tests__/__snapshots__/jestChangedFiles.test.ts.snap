@@ -5,8 +5,7 @@ exports[`handles a bad revision for "changedSince", for git 1`] = `
 
   ● Test suite failed to run
 
-    fatal: bad revision '^blablabla'
-
+    fatal: bad revision '^blablabla...HEAD'
 
 `;
 
@@ -16,6 +15,5 @@ exports[`handles a bad revision for "changedSince", for hg 1`] = `
   ● Test suite failed to run
 
     abort: unknown revision 'blablabla'!
-
 
 `;

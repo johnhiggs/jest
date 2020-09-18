@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import prettyFormat from 'pretty-format';
+import prettyFormat = require('pretty-format');
 
 import plugin from '../mock_serializer';
 
@@ -27,7 +27,7 @@ test('mock with 2 calls, 1 return, 1 throw', () => {
 
   try {
     fn(3);
-  } catch (error) {
+  } catch {
     // ignore error
   }
 

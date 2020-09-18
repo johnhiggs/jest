@@ -5,22 +5,23 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import path from 'path';
-import {Config} from '@jest/types';
-import {AggregatedResult} from '@jest/test-result';
-import {clearLine} from 'jest-util';
+import * as path from 'path';
+import type {Config} from '@jest/types';
+import type {AggregatedResult} from '@jest/test-result';
+import {clearLine, tryRealpath} from 'jest-util';
 import {validateCLIOptions} from 'jest-validate';
 import {deprecationEntries} from 'jest-config';
-import {runCLI} from '@jest/core';
-import chalk from 'chalk';
-import exit from 'exit';
-import yargs from 'yargs';
-import {sync as realpath} from 'realpath-native';
+import {getVersion, runCLI} from '@jest/core';
+import chalk = require('chalk');
+import exit = require('exit');
+import yargs = require('yargs');
 import init from '../init';
-import getVersion from '../version';
 import * as args from './args';
 
-export async function run(maybeArgv?: Array<string>, project?: Config.Path) {
+export async function run(
+  maybeArgv?: Array<string>,
+  project?: Config.Path,
+): Promise<void> {
   try {
     const argv: Config.Argv = buildArgv(maybeArgv);
 
@@ -36,7 +37,12 @@ export async function run(maybeArgv?: Array<string>, project?: Config.Path) {
   } catch (error) {
     clearLine(process.stderr);
     clearLine(process.stdout);
-    console.error(chalk.red(error.stack));
+    if (error.stack) {
+      console.error(chalk.red(error.stack));
+    } else {
+      console.error(chalk.red(error));
+    }
+
     exit(1);
     throw error;
   }
@@ -67,14 +73,14 @@ export const buildArgv = (maybeArgv?: Array<string>): Config.Argv => {
   );
 
   // strip dashed args
-  return Object.keys(argv).reduce(
+  return Object.keys(argv).reduce<Config.Argv>(
     (result, key) => {
       if (!key.includes('-')) {
         result[key] = argv[key];
       }
       return result;
     },
-    {} as Config.Argv,
+    {$0: argv.$0, _: argv._},
   );
 };
 
@@ -90,8 +96,8 @@ const getProjectListFromCLIArgs = (
 
   if (!projects.length && process.platform === 'win32') {
     try {
-      projects.push(realpath(process.cwd()));
-    } catch (err) {
+      projects.push(tryRealpath(process.cwd()));
+    } catch {
       // do nothing, just catch error
       // process.binding('fs').realpath can throw, e.g. on mapped drives
     }

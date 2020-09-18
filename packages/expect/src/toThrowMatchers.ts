@@ -6,16 +6,19 @@
  *
  */
 
+/* eslint-disable local/ban-types-eventually */
+
 import {formatStackTrace, separateMessageFromStack} from 'jest-message-util';
 import {
   EXPECTED_COLOR,
+  MatcherHintOptions,
   RECEIVED_COLOR,
   matcherErrorMessage,
   matcherHint,
+  printDiffOrStringify,
   printExpected,
   printReceived,
   printWithType,
-  MatcherHintOptions,
 } from 'jest-matcher-utils';
 import {
   printExpectedConstructorName,
@@ -25,9 +28,10 @@ import {
   printReceivedStringContainExpectedResult,
   printReceivedStringContainExpectedSubstring,
 } from './print';
-import {
-  MatchersObject,
+import type {
+  ExpectationResult,
   MatcherState,
+  MatchersObject,
   RawMatcherFn,
   SyncExpectationResult,
 } from './types';
@@ -74,7 +78,11 @@ export const createMatcher = (
   matcherName: string,
   fromPromise?: boolean,
 ): RawMatcherFn =>
-  function(this: MatcherState, received: Function, expected: any) {
+  function (
+    this: MatcherState,
+    received: Function,
+    expected: any,
+  ): ExpectationResult {
     const options = {
       isNot: this.isNot,
       promise: this.promise,
@@ -216,7 +224,7 @@ const toThrowExpectedObject = (
   matcherName: string,
   options: MatcherHintOptions,
   thrown: Thrown | null,
-  expected: any,
+  expected: Error,
 ): SyncExpectationResult => {
   const pass = thrown !== null && thrown.message === expected.message;
 
@@ -231,13 +239,22 @@ const toThrowExpectedObject = (
     : () =>
         matcherHint(matcherName, undefined, undefined, options) +
         '\n\n' +
-        formatExpected('Expected message: ', expected.message) +
         (thrown === null
-          ? '\n' + DID_NOT_THROW
+          ? formatExpected('Expected message: ', expected.message) +
+            '\n' +
+            DID_NOT_THROW
           : thrown.hasMessage
-          ? formatReceived('Received message: ', thrown, 'message') +
+          ? printDiffOrStringify(
+              expected.message,
+              thrown.message,
+              'Expected message',
+              'Received message',
+              true,
+            ) +
+            '\n' +
             formatStack(thrown)
-          : formatReceived('Received value:   ', thrown, 'value'));
+          : formatExpected('Expected message: ', expected.message) +
+            formatReceived('Received value:   ', thrown, 'value'));
 
   return {message, pass};
 };

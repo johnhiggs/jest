@@ -5,23 +5,27 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import {Circus} from '@jest/types';
+import type {Circus} from '@jest/types';
 import {TEST_TIMEOUT_SYMBOL} from './types';
 
 import {
   addErrorToEachTestUnderDescribe,
-  makeDescribe,
+  describeBlockHasTests,
   getTestDuration,
   invariant,
+  makeDescribe,
   makeTest,
-  describeBlockHasTests,
 } from './utils';
 import {
   injectGlobalErrorHandlers,
   restoreGlobalErrorHandlers,
 } from './globalErrorHandlers';
 
-const eventHandler: Circus.EventHandler = (event, state): void => {
+// TODO: investigate why a shorter (event, state) signature results into TS7006 compiler error
+const eventHandler: Circus.EventHandler = (
+  event: Circus.Event,
+  state: Circus.State,
+): void => {
   switch (event.name) {
     case 'include_test_location_in_result': {
       state.includeTestLocationInResult = true;
@@ -32,7 +36,17 @@ const eventHandler: Circus.EventHandler = (event, state): void => {
     }
     case 'start_describe_definition': {
       const {blockName, mode} = event;
-      const {currentDescribeBlock} = state;
+      const {currentDescribeBlock, currentlyRunningTest} = state;
+
+      if (currentlyRunningTest) {
+        currentlyRunningTest.errors.push(
+          new Error(
+            `Cannot nest a describe inside a test. Describe block "${blockName}" cannot run because it is nested within "${currentlyRunningTest.name}".`,
+          ),
+        );
+        break;
+      }
+
       const describeBlock = makeDescribe(blockName, currentDescribeBlock, mode);
       currentDescribeBlock.children.push(describeBlock);
       state.currentDescribeBlock = describeBlock;
@@ -44,31 +58,31 @@ const eventHandler: Circus.EventHandler = (event, state): void => {
 
       if (!describeBlockHasTests(currentDescribeBlock)) {
         currentDescribeBlock.hooks.forEach(hook => {
-          hook.asyncError.message = `Invalid: ${
-            hook.type
-          }() may not be used in a describe block containing no tests.`;
+          hook.asyncError.message = `Invalid: ${hook.type}() may not be used in a describe block containing no tests.`;
           state.unhandledErrors.push(hook.asyncError);
         });
       }
 
-      // inherit mode from its parent describe but
-      // do not inherit "only" mode when there is already tests with "only" mode
-      const shouldInheritMode = !(
+      // pass mode of currentDescribeBlock to tests
+      // but do not when there is already a single test with "only" mode
+      const shouldPassMode = !(
         currentDescribeBlock.mode === 'only' &&
-        currentDescribeBlock.tests.find(test => test.mode === 'only')
+        currentDescribeBlock.children.some(
+          child => child.type === 'test' && child.mode === 'only',
+        )
       );
-
-      if (shouldInheritMode) {
-        currentDescribeBlock.tests.forEach(test => {
-          if (!test.mode) {
-            test.mode = currentDescribeBlock.mode;
+      if (shouldPassMode) {
+        currentDescribeBlock.children.forEach(child => {
+          if (child.type === 'test' && !child.mode) {
+            child.mode = currentDescribeBlock.mode;
           }
         });
       }
-
       if (
         !state.hasFocusedTests &&
-        currentDescribeBlock.tests.some(test => test.mode === 'only')
+        currentDescribeBlock.children.some(
+          child => child.type === 'test' && child.mode === 'only',
+        )
       ) {
         state.hasFocusedTests = true;
       }
@@ -79,15 +93,49 @@ const eventHandler: Circus.EventHandler = (event, state): void => {
       break;
     }
     case 'add_hook': {
-      const {currentDescribeBlock} = state;
+      const {currentDescribeBlock, currentlyRunningTest, hasStarted} = state;
       const {asyncError, fn, hookType: type, timeout} = event;
+
+      if (currentlyRunningTest) {
+        currentlyRunningTest.errors.push(
+          new Error(
+            `Hooks cannot be defined inside tests. Hook of type "${type}" is nested within "${currentlyRunningTest.name}".`,
+          ),
+        );
+        break;
+      } else if (hasStarted) {
+        state.unhandledErrors.push(
+          new Error(
+            'Cannot add a hook after tests have started running. Hooks must be defined synchronously.',
+          ),
+        );
+        break;
+      }
       const parent = currentDescribeBlock;
+
       currentDescribeBlock.hooks.push({asyncError, fn, parent, timeout, type});
       break;
     }
     case 'add_test': {
-      const {currentDescribeBlock} = state;
+      const {currentDescribeBlock, currentlyRunningTest, hasStarted} = state;
       const {asyncError, fn, mode, testName: name, timeout} = event;
+
+      if (currentlyRunningTest) {
+        currentlyRunningTest.errors.push(
+          new Error(
+            `Tests cannot be nested. Test "${name}" cannot run because it is nested within "${currentlyRunningTest.name}".`,
+          ),
+        );
+        break;
+      } else if (hasStarted) {
+        state.unhandledErrors.push(
+          new Error(
+            'Cannot add a test after tests have started running. Tests must be defined synchronously.',
+          ),
+        );
+        break;
+      }
+
       const test = makeTest(
         fn,
         mode,
@@ -99,6 +147,7 @@ const eventHandler: Circus.EventHandler = (event, state): void => {
       if (test.mode === 'only') {
         state.hasFocusedTests = true;
       }
+      currentDescribeBlock.children.push(test);
       currentDescribeBlock.tests.push(test);
       break;
     }
@@ -108,14 +157,14 @@ const eventHandler: Circus.EventHandler = (event, state): void => {
 
       if (type === 'beforeAll') {
         invariant(describeBlock, 'always present for `*All` hooks');
-        addErrorToEachTestUnderDescribe(describeBlock!, error, asyncError);
+        addErrorToEachTestUnderDescribe(describeBlock, error, asyncError);
       } else if (type === 'afterAll') {
         // Attaching `afterAll` errors to each test makes execution flow
         // too complicated, so we'll consider them to be global.
         state.unhandledErrors.push([error, asyncError]);
       } else {
         invariant(test, 'always present for `*Each` hooks');
-        test!.errors.push([error, asyncError]);
+        test.errors.push([error, asyncError]);
       }
       break;
     }
@@ -152,6 +201,7 @@ const eventHandler: Circus.EventHandler = (event, state): void => {
       break;
     }
     case 'run_start': {
+      state.hasStarted = true;
       global[TEST_TIMEOUT_SYMBOL] &&
         (state.testTimeout = global[TEST_TIMEOUT_SYMBOL]);
       break;
@@ -180,8 +230,8 @@ const eventHandler: Circus.EventHandler = (event, state): void => {
       invariant(state.originalGlobalErrorHandlers);
       invariant(state.parentProcess);
       restoreGlobalErrorHandlers(
-        state.parentProcess!,
-        state.originalGlobalErrorHandlers!,
+        state.parentProcess,
+        state.originalGlobalErrorHandlers,
       );
       break;
     }

@@ -5,8 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import style from 'ansi-styles';
-import * as PrettyFormat from './types';
+/* eslint-disable local/ban-types-eventually */
+
+import style = require('ansi-styles');
+import type * as PrettyFormat from './types';
 
 import {
   printIteratorEntries,
@@ -27,18 +29,18 @@ const toString = Object.prototype.toString;
 const toISOString = Date.prototype.toISOString;
 const errorToString = Error.prototype.toString;
 const regExpToString = RegExp.prototype.toString;
-const symbolToString = Symbol.prototype.toString;
 
 /**
  * Explicitly comparing typeof constructor to function avoids undefined as name
  * when mock identity-obj-proxy returns the key as the value for any key.
  */
-const getConstructorName = (val: new (...args: Array<any>) => any) =>
+const getConstructorName = (val: new (...args: Array<any>) => unknown) =>
   (typeof val.constructor === 'function' && val.constructor.name) || 'Object';
 
 /* global window */
 /** Is val is equal to global window object? Works even if it does not exist :) */
-const isWindow = (val: any) => typeof window !== 'undefined' && val === window;
+const isWindow = (val: unknown) =>
+  typeof window !== 'undefined' && val === window;
 
 const SYMBOL_REGEXP = /^Symbol\((.*)\)(.*)$/;
 const NEWLINE_REGEXP = /\n/gi;
@@ -84,7 +86,7 @@ function printFunction(val: Function, printFunctionName: boolean): string {
 }
 
 function printSymbol(val: symbol): string {
-  return symbolToString.call(val).replace(SYMBOL_REGEXP, 'Symbol($1)');
+  return String(val).replace(SYMBOL_REGEXP, 'Symbol($1)');
 }
 
 function printError(val: Error): string {
@@ -305,7 +307,7 @@ function printPlugin(
   return printed;
 }
 
-function findPlugin(plugins: PrettyFormat.Plugins, val: any) {
+function findPlugin(plugins: PrettyFormat.Plugins, val: unknown) {
   for (let p = 0; p < plugins.length; p++) {
     try {
       if (plugins[p].test(val)) {
@@ -320,7 +322,7 @@ function findPlugin(plugins: PrettyFormat.Plugins, val: any) {
 }
 
 function printer(
-  val: any,
+  val: unknown,
   config: PrettyFormat.Config,
   indentation: string,
   depth: number,
@@ -360,7 +362,9 @@ const DEFAULT_THEME: PrettyFormat.Theme = {
   value: 'green',
 };
 
-const DEFAULT_THEME_KEYS = Object.keys(DEFAULT_THEME);
+const DEFAULT_THEME_KEYS = Object.keys(DEFAULT_THEME) as Array<
+  keyof typeof DEFAULT_THEME
+>;
 
 const DEFAULT_OPTIONS: PrettyFormat.Options = {
   callToJSON: true,
@@ -406,10 +410,10 @@ const getColorsHighlight = (
 ): PrettyFormat.Colors =>
   DEFAULT_THEME_KEYS.reduce((colors, key) => {
     const value =
-      options.theme && (options.theme as any)[key] !== undefined
-        ? (options.theme as any)[key]
-        : (DEFAULT_THEME as any)[key];
-    const color = (style as any)[value];
+      options.theme && options.theme[key] !== undefined
+        ? options.theme[key]
+        : DEFAULT_THEME[key];
+    const color = value && (style as any)[value];
     if (
       color &&
       typeof color.close === 'string' &&
@@ -490,7 +494,7 @@ function createIndent(indent: number): string {
  * @param options Custom settings
  */
 function prettyFormat(
-  val: any,
+  val: unknown,
   options?: PrettyFormat.OptionsReceived,
 ): string {
   if (options) {
@@ -526,12 +530,12 @@ prettyFormat.plugins = {
   ReactTestComponent,
 };
 
-/* eslint-disable-next-line no-redeclare */
 namespace prettyFormat {
   export type Colors = PrettyFormat.Colors;
   export type Config = PrettyFormat.Config;
   export type Options = PrettyFormat.Options;
   export type OptionsReceived = PrettyFormat.OptionsReceived;
+  export type OldPlugin = PrettyFormat.OldPlugin;
   export type NewPlugin = PrettyFormat.NewPlugin;
   export type Plugin = PrettyFormat.Plugin;
   export type Plugins = PrettyFormat.Plugins;

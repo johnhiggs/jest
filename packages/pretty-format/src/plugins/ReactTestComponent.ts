@@ -5,12 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import {Config, Printer, NewPlugin, Refs} from '../types';
+import type {Config, NewPlugin, Printer, Refs} from '../types';
 
 export type ReactTestObject = {
   $$typeof: symbol;
   type: string;
-  props?: Record<string, any>;
+  props?: Record<string, unknown>;
   children?: null | Array<ReactTestChild>;
 };
 
@@ -24,26 +24,29 @@ import {
   printProps,
 } from './lib/markup';
 
-const testSymbol = Symbol.for('react.test.json');
+const testSymbol =
+  typeof Symbol === 'function' && Symbol.for
+    ? Symbol.for('react.test.json')
+    : 0xea71357;
 
 const getPropKeys = (object: ReactTestObject) => {
   const {props} = object;
 
   return props
     ? Object.keys(props)
-        .filter(key => (props as any)[key] !== undefined)
+        .filter(key => props[key] !== undefined)
         .sort()
     : [];
 };
 
-export const serialize = (
+export const serialize: NewPlugin['serialize'] = (
   object: ReactTestObject,
   config: Config,
   indentation: string,
   depth: number,
   refs: Refs,
   printer: Printer,
-): string =>
+) =>
   ++depth > config.maxDepth
     ? printElementAsLeaf(object.type, config)
     : printElement(
@@ -73,7 +76,8 @@ export const serialize = (
         indentation,
       );
 
-export const test = (val: any) => val && val.$$typeof === testSymbol;
+export const test: NewPlugin['test'] = val =>
+  val && val.$$typeof === testSymbol;
 
 const plugin: NewPlugin = {serialize, test};
 

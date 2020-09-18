@@ -5,12 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import {Script} from 'vm';
-import {Global, Config} from '@jest/types';
+import type {Context, Script} from 'vm';
+import type {Config, Global} from '@jest/types';
 import {installCommonGlobals} from 'jest-util';
-import mock, {ModuleMocker} from 'jest-mock';
-import {JestFakeTimers as FakeTimers} from '@jest/fake-timers';
-import {JestEnvironment, EnvironmentContext} from '@jest/environment';
+import {ModuleMocker} from 'jest-mock';
+import {LegacyFakeTimers, ModernFakeTimers} from '@jest/fake-timers';
+import type {EnvironmentContext, JestEnvironment} from '@jest/environment';
 import {JSDOM, VirtualConsole} from 'jsdom';
 
 // The `Window` interface does not have an `Error.stackTraceLimit` property, but
@@ -24,7 +24,8 @@ type Win = Window &
 
 class JSDOMEnvironment implements JestEnvironment {
   dom: JSDOM | null;
-  fakeTimers: FakeTimers<number> | null;
+  fakeTimers: LegacyFakeTimers<number> | null;
+  fakeTimersModern: ModernFakeTimers | null;
   global: Win;
   errorEventListener: ((event: Event & {error: Error}) => void) | null;
   moduleMocker: ModuleMocker | null;
@@ -37,11 +38,16 @@ class JSDOMEnvironment implements JestEnvironment {
       virtualConsole: new VirtualConsole().sendTo(options.console || console),
       ...config.testEnvironmentOptions,
     });
-    const global = (this.global = this.dom.window.document.defaultView as Win);
+    const global = (this.global = (this.dom.window.document
+      .defaultView as unknown) as Win);
 
     if (!global) {
       throw new Error('JSDOM did not return a Window object');
     }
+
+    // In the `jsdom@16`, ArrayBuffer was not added to Window, ref: https://github.com/jsdom/jsdom/commit/3a4fd6258e6b13e9cf8341ddba60a06b9b5c7b5b
+    // Install ArrayBuffer to Window to fix it. Make sure the test is passed, ref: https://github.com/facebook/jest/pull/7626
+    global.ArrayBuffer = ArrayBuffer;
 
     // Node's error-message stack size is limited at 10, but it's pretty useful
     // to see more than that when a test fails.
@@ -61,7 +67,7 @@ class JSDOMEnvironment implements JestEnvironment {
     const originalAddListener = global.addEventListener;
     const originalRemoveListener = global.removeEventListener;
     let userErrorListenerCount = 0;
-    global.addEventListener = function(
+    global.addEventListener = function (
       ...args: Parameters<typeof originalAddListener>
     ) {
       if (args[0] === 'error') {
@@ -69,7 +75,7 @@ class JSDOMEnvironment implements JestEnvironment {
       }
       return originalAddListener.apply(this, args);
     };
-    global.removeEventListener = function(
+    global.removeEventListener = function (
       ...args: Parameters<typeof originalRemoveListener>
     ) {
       if (args[0] === 'error') {
@@ -78,28 +84,31 @@ class JSDOMEnvironment implements JestEnvironment {
       return originalRemoveListener.apply(this, args);
     };
 
-    this.moduleMocker = new mock.ModuleMocker(global as any);
+    this.moduleMocker = new ModuleMocker(global as any);
 
     const timerConfig = {
       idToRef: (id: number) => id,
       refToId: (ref: number) => ref,
     };
 
-    this.fakeTimers = new FakeTimers({
+    this.fakeTimers = new LegacyFakeTimers({
       config,
-      global: global as any,
+      global,
       moduleMocker: this.moduleMocker,
       timerConfig,
     });
+
+    this.fakeTimersModern = new ModernFakeTimers({config, global});
   }
 
-  setup() {
-    return Promise.resolve();
-  }
+  async setup(): Promise<void> {}
 
-  teardown() {
+  async teardown(): Promise<void> {
     if (this.fakeTimers) {
       this.fakeTimers.dispose();
+    }
+    if (this.fakeTimersModern) {
+      this.fakeTimersModern.dispose();
     }
     if (this.global) {
       if (this.errorEventListener) {
@@ -110,16 +119,23 @@ class JSDOMEnvironment implements JestEnvironment {
       this.global.close();
     }
     this.errorEventListener = null;
-    // @ts-ignore
+    // @ts-expect-error
     this.global = null;
     this.dom = null;
     this.fakeTimers = null;
-    return Promise.resolve();
+    this.fakeTimersModern = null;
   }
 
-  runScript(script: Script) {
+  runScript<T = unknown>(script: Script): T | null {
     if (this.dom) {
-      return this.dom.runVMScript(script) as any;
+      return script.runInContext(this.dom.getInternalVMContext());
+    }
+    return null;
+  }
+
+  getVmContext(): Context | null {
+    if (this.dom) {
+      return this.dom.getInternalVMContext();
     }
     return null;
   }

@@ -5,9 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+export {alignedAnsiStyleSerializer} from './alignedAnsiStyleSerializer';
+
 export {
   isJestCircusRun,
   skipSuiteOnJasmine,
   skipSuiteOnJestCircus,
-  skipSuiteOnWindows,
+  onNodeVersions,
 } from './ConditionalTest';
